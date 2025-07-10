@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Playable Ad - Dress Up with Sparkle</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; background: #000; cursor: url("pointer.png"), auto; }
+    #game-container { position: relative; width: 100%; height: 100%; max-width: 100vw; max-height: 100vh; overflow: hidden; }
+    /* 배경 이미지 (세로/가로 모드) */
+    .blur-bg { position: absolute; inset: 0; background: url('bg_01.jpg') center/cover no-repeat; z-index: 0; }
+    @media (orientation: landscape) { .blur-bg { background: url('bg_02.jpg') center/cover no-repeat; 
+    margin-top: -50px;
+} }
+    .dark-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.4); display: none; z-index: 1; }
+    #sparkle { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); display: none; z-index: 10001; pointer-events: none; }
+    .character-wrapper { position: absolute; bottom: 120px; left: 50%; transform: translateX(-50%) scale(1.2); transform-origin: bottom center; z-index: 2; }
+    #banner-img, #banner-text { position: fixed; left: 50%; transform: translateX(-50%); }
+    #banner-img { bottom: 20px; width: 40vw; max-width: 480px; animation: banner-glow 1.5s infinite; z-index: 4; cursor: pointer; }
+    #banner-text { top: 30px; width: 40vw; max-width: 468px; z-index: 3; }
+    @keyframes banner-glow { 0%,100% { filter: none; } 50% { filter: drop-shadow(0 0 10px rgba(255,255,255,0.7)); } }
+    .btn-container { position: absolute; display: flex; flex-direction: column; gap: 12px; z-index: 2; }
+    .btn-container.left { left: 10px; top: 50%; transform: translateY(-50%); }
+    .btn-container.right { right: 10px; top: 50%; transform: translateY(-50%); }
+    .drag-btn { width: min(18vw, 90px); height: min(18vw, 90px); border-radius: 10px; transition: opacity .3s; object-fit: contain; cursor: url("grab.png"), grab; }
+    #drag-image { position: absolute; width: 120px; animation: flash-glow .5s infinite alternate; pointer-events: none; display: none; z-index: 9999; }
+    @keyframes flash-glow { 0% { filter: drop-shadow(0 0 4px rgba(255,255,255,0.3)); } 100% { filter: drop-shadow(0 0 12px rgba(255,255,255,0.9)); } }
+    #tutorial-hand { position: absolute; width: 60px; height: 60px; display: none; pointer-events: none; z-index: 10000; }
+    .character, .outfit { display: block; width: 100%; height: auto; }
+    .outfit { position: absolute; top: 0; left: 0; z-index: 4; display: none; pointer-events: none; }
+    #character.glow, #outfit-layer.glow { animation: character-glow 0.8s ease-in-out forwards; }
+    @keyframes character-glow { 0% { filter: brightness(1) drop-shadow(0 0 0 rgba(255,255,255,0)); transform: scale(1); } 50% { filter: brightness(2) drop-shadow(0 0 10px rgba(255,255,255,0.8)); transform: scale(1.05); } 100% { filter: brightness(1) drop-shadow(0 0 0 rgba(255,255,255,0)); transform: scale(1); } }
+    @media (orientation: portrait) { .character-wrapper { top: 50%; bottom: auto; transform: translate(-50%, -50%) scale(1.44); } .drag-btn { width: min(21.6vw,108px); height: min(21.6vw,108px); } #banner-img { transform: translateX(-50%) scale(1.5); } #banner-text { transform: translateX(-50%) scale(1.6); } }
+    @media (orientation: landscape) { .character-wrapper { top: 50%; bottom: auto; transform: translate(-50%, -60%) scale(0.72); 
+    margin-top: -50px;
+} .drag-btn { width: min(18vw,90px); height: min(18vw,90px); } }
+  
+@media (orientation: portrait) {
+  .character-wrapper {
+    bottom: 100px;
+  }
+}
+
+</style>
+</head>
+<body>
+  <div id="game-container">
+    <div class="blur-bg"></div>
+    <div class="dark-overlay" id="overlay"></div>
+    <img id="banner-img" src="banner.png" alt="Banner">
+    <img id="banner-text" src="text_banner.png" alt="Text Banner">
+    <div class="character-wrapper" id="dropzone">
+      <img id="character" class="character" src="character_base.png" alt="Character">
+      <img id="outfit-layer" class="outfit" src="" alt="Outfit">
+    </div>
+    <img id="sparkle" src="sparkle.gif" alt="Sparkle">
+    <div class="btn-container left">
+      <img id="btn1" class="drag-btn" draggable="true" src="btn_outfit1.png" data-outfit="outfit1.png" data-btn="1" data-drag="drag_outfit1.png">
+      <img id="btn2" class="drag-btn" draggable="true" src="btn_outfit2.png" data-outfit="outfit2.png" data-btn="2" data-drag="drag_outfit2.png">
+      <img id="btn3" class="drag-btn" draggable="true" src="btn_outfit3.png" data-outfit="outfit3.png" data-btn="3" data-drag="drag_outfit3.png">
+    </div>
+    <div class="btn-container right">
+      <img id="btn4" class="drag-btn" draggable="true" src="btn_outfit4.png" data-outfit="outfit4.png" data-btn="4" data-drag="drag_outfit4.png">
+      <img id="btn5" class="drag-btn" draggable="true" src="btn_outfit5.png" data-outfit="outfit5.png" data-btn="5" data-drag="drag_outfit5.png">
+      <img id="btn6" class="drag-btn" draggable="true" src="btn_outfit6.png" data-outfit="outfit6.png" data-btn="6" data-drag="drag_outfit6.png">
+    </div>
+    <img id="drag-image" src="" alt="Dragging">
+    <img id="tutorial-hand" src="pointer.png" alt="Hand">
+  </div>
+  <script>
+    // Audio setup
+    const bgm = new Audio('BGM1.mp3');
+    const clickSound = new Audio('click.mp3');
+    const wearSound = new Audio('wear.mp3');
+    let bgmPlayed = false;
+
+    const allBtns = document.querySelectorAll('.drag-btn');
+    const dropzone = document.getElementById('dropzone');
+    const overlay = document.getElementById('overlay');
+    const hand = document.getElementById('tutorial-hand');
+    const dragImage = document.getElementById('drag-image');
+    let sparkle = document.getElementById('sparkle');
+    const character = document.getElementById('character');
+    const outfitLayer = document.getElementById('outfit-layer');
+    let isTutorial = true;
+
+    // Play click sound on every click
+    document.addEventListener('click', () => {
+      clickSound.currentTime = 0;
+      clickSound.play();
+      // First user interaction: play bgm
+      if (!bgmPlayed) {
+        bgm.play();
+        bgmPlayed = true;
+      }
+    });
+
+    function finishTutorial() {
+      isTutorial = false;
+      overlay.style.display = 'none';
+      hand.style.display = 'none';
+      allBtns.forEach(btn => {
+        btn.style.opacity = '1';
+        btn.draggable = true;
+      });
+      // Play BGM if not already
+      if (!bgmPlayed) {
+        bgm.play();
+        bgmPlayed = true;
+      }
+    }
+
+    function startTutorial() {
+      overlay.style.display = 'block';
+      hand.style.display = 'block';
+      const firstBtn = document.getElementById('btn1');
+      allBtns.forEach(btn => {
+        if (btn !== firstBtn) {
+          btn.style.opacity = '0.3';
+          btn.draggable = false;
+        }
+      });
+      const animateHand = () => {
+        if (!isTutorial) return;
+        const btnRect = firstBtn.getBoundingClientRect();
+        const dropRect = dropzone.getBoundingClientRect();
+        hand.style.transition = 'none';
+        hand.style.left = `${btnRect.left + btnRect.width/2 - 30}px`;
+        hand.style.top = `${btnRect.top + btnRect.height/2 - 30}px`;
+        setTimeout(() => {
+          if (!isTutorial) return;
+          hand.style.transition = 'all 1.5s ease';
+          hand.style.left = `${window.innerWidth/2 - 30}px`;
+          hand.style.top = `${dropRect.top + dropRect.height/2 + 20}px`;
+          setTimeout(() => {
+            if (isTutorial) animateHand();
+          }, 1600);
+        }, 300);
+      };
+      animateHand();
+    }
+
+    allBtns.forEach(btn => {
+      btn.addEventListener('dragstart', e => {
+        const empty = new Image();
+        empty.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"></svg>';
+        e.dataTransfer.setDragImage(empty, 0, 0);
+        dragImage.src = btn.dataset.drag;
+        dragImage.style.display = 'block';
+        dragImage.style.left = `${e.pageX - 80}px`;
+        dragImage.style.top = `${e.pageY - 80}px`;
+        e.dataTransfer.setData('outfit', btn.dataset.outfit);
+        e.dataTransfer.setData('btn-id', btn.dataset.btn);
+      });
+      btn.addEventListener('dragend', () => {
+        dragImage.style.display = 'none';
+      });
+    });
+
+    document.addEventListener('dragover', e => {
+      dragImage.style.left = `${e.pageX - 80}px`;
+      dragImage.style.top = `${e.pageY - 80}px`;
+    });
+    dropzone.addEventListener('dragover', e => e.preventDefault());
+    dropzone.addEventListener('drop', e => {
+      e.preventDefault();
+      const outfit = e.dataTransfer.getData('outfit');
+      const id = e.dataTransfer.getData('btn-id');
+      if (!outfit || !id) return;
+      // Play wear sound
+      wearSound.currentTime = 0;
+      wearSound.play();
+      outfitLayer.src = outfit;
+      outfitLayer.style.display = 'block';
+      character.style.opacity = '0';
+      // Sparkle effect
+      const oldSparkle = sparkle;
+      const newSparkle = oldSparkle.cloneNode(true);
+      oldSparkle.parentNode.replaceChild(newSparkle, oldSparkle);
+      sparkle = newSparkle;
+      sparkle.style.display = 'block';
+      outfitLayer.classList.add('glow');
+      setTimeout(() => {
+        sparkle.style.display = 'none';
+        outfitLayer.classList.remove('glow');
+      }, 710);
+      if (isTutorial) {
+        finishTutorial();
+        return;
+      }
+      allBtns.forEach(b => {
+        if (b.dataset.btn !== id) {
+          b.src = `btn_outfit${b.dataset.btn}.png`;
+          b.draggable = true;
+          b.style.opacity = '1';
+        }
+      });
+      const usedBtn = document.getElementById(`btn${id}`);
+      usedBtn.src = `btn_empty${id}.png`;
+      usedBtn.draggable = false;
+      usedBtn.style.opacity = '0.5';
+    });
+
+    window.addEventListener('load', startTutorial);
+    window.addEventListener('resize', () => {
+      // 배경 자동 갱신을 위해 강제 리페인트
+      document.querySelector('.blur-bg').style.background = '';
+    });
+  </script>
+</body>
+</html>
